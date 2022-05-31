@@ -1,16 +1,20 @@
+from crypt import methods
 from PIL import Image
 import pytesseract
 import numpy as np
+import io
 
 from quantulum3 import parser
-from flask import Flask
+from flask import Flask, request
+from flask_cors import CORS
 
 
 app = Flask(__name__)
-@app.route("/")
+CORS(app)
+
+@app.route("/", methods=["POST"])
 def scan():
-	filename = 'nutrition_facts.jpeg'
-	img1 = np.array(Image.open(filename))
+	img1 = np.array(Image.open(io.BytesIO(request.data)))
 	text = pytesseract.image_to_string(img1)
 	return scan_ingredients(text) 
 
