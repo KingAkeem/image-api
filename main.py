@@ -16,40 +16,55 @@ CORS(app)
 def scan():
 	img1 = np.array(Image.open(io.BytesIO(request.data)))
 	text = pytesseract.image_to_string(img1)
-	return scan_ingredients(text) 
 
-nutrition_fact_keys = [
-	"Serving Size", 
-	"Amount Per Serving",
-	"Calories",
-	"Total Fat",
-	"Saturated Fat"
-	"Trans Fat",
-	"Cholesterol",
-	"Sodium",
-	"Total Carbohydrate",
-	"Dietary Fiber",
-	"Sugars",
-	"Protein",
-	"Vitamin A",
-	"Calcium"
-]
+	scanner = NutritionScanner()
+	scanner.scan_nutrition(text) 
+	return scanner.nutrition
 
-def scan_ingredients(text):
-	ingredients = {}
-	for line in text.split('\n'):
-		for nutrition_fact_key in nutrition_fact_keys:
-			if line.startswith(nutrition_fact_key):
+class NutritionScanner:
+	def __init__(self):
+		self.nutrition = {}
+		self.keys = [
+			"Serving Size", 
+			"Amount Per Serving",
+			"Calories",
+			"Total Fat",
+			"Saturated Fat"
+			"Trans Fat",
+			"Cholesterol",
+			"Sodium",
+			"Total Carbohydrate",
+			"Dietary Fiber",
+			"Sugars",
+			"Protein",
+			"Vitamin A",
+			"Calcium"
+		]
 
-				end_position = line.find(nutrition_fact_key) + len(nutrition_fact_key)
-				quantities = parser.parse(line[end_position:])
+		# load keys
+		for key in self.keys:
+			self.nutrition[key] = {}
+		
+	def insert_quantity(self, key, quantity):
+		if quantity.unit.name in self.nutrition[key]:
+			self.nutrition[key][quantity.unit.name] += quantity.value
+		else:
+			self.nutrition[key][quantity.unit.name] = quantity.value
+	
 
-				ingredients[nutrition_fact_key] = {}
+	def scan_nutrition(self, text):
+		ingredients = {} 
+		for line in text.split('\n'):
+			for key in self.keys:
+				if line.startswith(key):
+					for quantity in parse_quantities(key, line):
+						self.insert_quantity(key, quantity)
 
-				for quantity in quantities:
-					if quantity.unit.name in ingredients[nutrition_fact_key]:
-						ingredients[nutrition_fact_key][quantity.unit.name] += quantity.value
-					else:
-						ingredients[nutrition_fact_key][quantity.unit.name] = quantity.value
-	return ingredients
+		return ingredients
 
+
+# get all of the text after the key which includes the parsable quantities 
+def parse_quantities(key, line):
+	end_position = line.find(key) + len(key)
+	quantities = parser.parse(line[end_position:])
+	return quantities
