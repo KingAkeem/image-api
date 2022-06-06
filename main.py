@@ -53,15 +53,11 @@ class NutritionScanner:
 	
 
 	def scan_nutrition(self, text):
-		ingredients = {} 
 		for line in text.split('\n'):
 			for key in self.keys:
 				if line.startswith(key):
 					for quantity in parse_quantities(key, line):
 						self.insert_quantity(key, quantity)
-
-		return ingredients
-
 
 # get all of the text after the key which includes the parsable quantities 
 def parse_quantities(key, line):
