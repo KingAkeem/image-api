@@ -1,2 +1,3 @@
-# prod-daily
-This app is meant to provide functions that help improve daily productivity. 
+# image-api
+This API is used to scan images and JSON objects containing relevant information from said image.
+

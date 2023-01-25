@@ -21,7 +21,7 @@ def scan():
 	# image type determines what kind of image we are interested
 	image_type = request.args.get('image_type', default=None, type=str)
 
-	# request.data represents the image data
+	# request.data represents the image data in bytes
 	if not image_type or not request.data: 
 		return {"error": "Image type and request data must be specified"}, HTTPStatus.BAD_REQUEST
 
