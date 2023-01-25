@@ -10,6 +10,7 @@ from quantulum3 import parser
 from PIL import Image
 from http import HTTPStatus
 from datetime import datetime, timezone
+from db import insert_request, insert_scan, init
 
 
 app = Flask(__name__)
@@ -32,20 +33,13 @@ def scan():
 	# the user that initiates the scan
 	user = request.args.get('user', default=None, type=str)
 
-	db = get_db()
-
-	insert_request(db, {
-		"id": "abc",
-		"scan_id": None,
-		"created_date": datetime.now(timezone.utc).isoformat(),
-		"created_user": user,
-		"status": "PROCESSING"
-	})
+	insert_request({"created_user": user, "status": "PROCESSING"})
 
 	# request.data represents the image data in bytes
-	if not scan_type or not request.data or not user: 
-		msg = "Image type, user and request data must be specified"
+	if not request.data or not user: 
+		msg = "User and request data must be specified"
 		app.logger.error(msg)
+		db.insert_request({"created_user": user, "status": "ERROR"})
 		return {"error": msg}, HTTPStatus.BAD_REQUEST
 
 	# convert image to text format
@@ -64,29 +58,20 @@ def scan():
 	with open(f'{directory_name}/data.txt', 'w+') as f:
 		f.write(text)
 
-	try:
-		scanner = Scanner(scan_type)
-		data = scanner.scan(text)
-	except ValueError as e:
-		app.logger.error(e)
-		return {"error": e.message}, HTTPStatus.BAD_REQUEST
+	data = text # data is initially text, unless scanned
+	if scan_type:
+		try:
+			scanner = Scanner(scan_type)
+			data = scanner.scan(text)
+		except ValueError as e:
+			app.logger.error(e)
+			db.insert_request({"created_user": user, "status": "ERROR"})
+			return {"error": e.message}, HTTPStatus.BAD_REQUEST
 
-	insert_scan(db, {
-		"id": "abc",
-		"type": scan_type,
-		"created_date": current_time, 
-		"created_user": user,
-		"text": text
-	})
+	insert_scan({"type": scan_type, "created_date": current_time, "created_user": user, "text": text})
 
 	app.logger.debug("PARSED DATA\n\n%s", data)
-	insert_request(db, {
-		"id": "abc",
-		"scan_id": "scan_id",
-		"created_date":datetime.now(timezone.utc).isoformat(), 
-		"created_user": user,
-		"status": "DONE"
-	})
+	insert_request({"created_user": user, "status": "DONE"})
 
 	return data, HTTPStatus.OK
 
@@ -148,74 +133,13 @@ class NutritionScanner(ScannerInterface):
 		quantities = parser.parse(line[end_position:])
 		return quantities
 
-def get_db(database = "database/scans"):
-	db = getattr(g, '_database', None)
-	if db is None:
-		if not os.path.exists("database"):
-			os.makedirs("database")
-
-		db = g._database = sqlite3.connect(database)
-	
-	return db
-
 @app.teardown_appcontext
 def close_connection(exception):
-    db = getattr(g, '_database', None)
-    if db is not None:
-        db.close()
+    conn = getattr(g, '_database', None)
+    if conn is not None:
+        conn.close()
 
-
-def setup_tables(conn):
-	db = conn.cursor()
-	db.execute("""
-		CREATE TABLE IF NOT EXISTS request_tracker(
-			id,
-			scan_id,
-			created_date,
-			created_user,
-			status
-		)
-	""")
-
-	db.execute("""
-		CREATE TABLE IF NOT EXISTS scan(
-			id,
-			created_date,
-			created_user,
-			text,
-			type
-		)
-	""")
-	conn.commit()
-
-def insert_request(conn, request):
-	db = conn.cursor()
-	db.execute(f'''INSERT INTO request_tracker (
-		id, 
-		scan_id,
-		created_date,
-		created_user,
-		status
-	) VALUES (?, ?, ?, ?,?);''', (request["id"], request["scan_id"], request["created_date"], request["created_user"], request["status"]))
-	conn.commit()
-
-def insert_scan(conn, scan):
-	db = conn.cursor()
-	db.execute(f"""INSERT INTO scan (
-		id, 
-		type,
-		created_date,
-		created_user,
-		text
-	) VALUES (?, ?, ?, ?, ?)""", (scan["id"], scan["type"], scan["created_date"], scan["created_user"], scan["text"]))
-	conn.commit()
-
-
-def init_db():
-	with app.app_context():
-		db = get_db()
-		setup_tables(db)
 
 if __name__ == '__main__':
-	init_db()
+	init(app)
 	app.run(debug=True)
