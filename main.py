@@ -39,7 +39,7 @@ def scan():
 	if not request.data or not user: 
 		msg = "User and request data must be specified"
 		app.logger.error(msg)
-		db.insert_request({"created_user": user, "status": "ERROR"})
+		insert_request({"created_user": user, "status": "ERROR"})
 		return {"error": msg}, HTTPStatus.BAD_REQUEST
 
 	# convert image to text format
@@ -65,7 +65,7 @@ def scan():
 			data = scanner.scan(text)
 		except ValueError as e:
 			app.logger.error(e)
-			db.insert_request({"created_user": user, "status": "ERROR"})
+			insert_request({"created_user": user, "status": "ERROR"})
 			return {"error": e.message}, HTTPStatus.BAD_REQUEST
 
 	insert_scan({"type": scan_type, "created_date": current_time, "created_user": user, "text": text})
