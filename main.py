@@ -18,23 +18,29 @@ Reads and parses an image file, returning the relevant data based on the type
 """
 @app.route("/", methods=["POST"])
 def scan():
+	app.logger.debug(f'SCANNING REQUEST... {request}')
 	# image type determines what kind of image we are interested
 	image_type = request.args.get('image_type', default=None, type=str)
 
 	# request.data represents the image data in bytes
 	if not image_type or not request.data: 
-		return {"error": "Image type and request data must be specified"}, HTTPStatus.BAD_REQUEST
+		msg = "Image type and request data must be specified"
+		app.logger.error(msg)
+		return {"error": msg}, HTTPStatus.BAD_REQUEST
 
 	# convert image to text format
 	img1 = np.array(Image.open(io.BytesIO(request.data)))
 	text = pytesseract.image_to_string(img1)
+	app.logger.debug("IMAGE CONVERTED TO TEXT FORMAT\n\n%s", text)
 	
 	try:
 		scanner = Scanner(image_type)
 		data = scanner.scan(text)
 	except ValueError as e:
+		app.logger.error(e)
 		return {"error": e.message}, HTTPStatus.BAD_REQUEST
 
+	app.logger.debug("PARSED DATA\n\n%s", data)
 	return data, HTTPStatus.OK
 
 class ScannerInterface:
