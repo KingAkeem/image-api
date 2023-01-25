@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "image-app"
+version = "0.1.0"
+description = ""
+authors = ["Akeem King <akeemtlking@gmail.com>"]
+readme = "README.md"
+packages = [{include = "image_app"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+quantulum3 = "^0.8.1"
+flask = "^2.2.2"
+flask-cors = "^3.0.10"
+pillow = "^9.4.0"
+pytesseract = "^0.3.10"
+numpy = "^1.24.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
