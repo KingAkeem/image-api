@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "image-app"
+name = "prod-daily"
 version = "0.1.0"
 description = ""
 authors = ["Akeem King <akeemtlking@gmail.com>"]
