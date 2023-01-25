@@ -148,9 +148,12 @@ class NutritionScanner(ScannerInterface):
 		quantities = parser.parse(line[end_position:])
 		return quantities
 
-def get_db(database = "test.db"):
+def get_db(database = "database/scans"):
 	db = getattr(g, '_database', None)
 	if db is None:
+		if not os.path.exists("database"):
+			os.makedirs("database")
+
 		db = g._database = sqlite3.connect(database)
 	
 	return db
