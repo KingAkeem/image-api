@@ -1,2 +1,2 @@
-# image-app
-This app scans images and returns object representing relevant information to the client
+# prod-daily
+This app is meant to provide functions that help improve daily productivity. 
