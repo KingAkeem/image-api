@@ -34,7 +34,7 @@ Query Parameters
 	* `nutrition`
 
 ### Response
-JSON object containing the results
+JSON object containing the results of the type or text if a valid type is not passed.
 
 ----
 
