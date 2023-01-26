@@ -4,7 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["Akeem King <akeemtlking@gmail.com>"]
 readme = "README.md"
-packages = [{include = "image_app"}]
+packages = [{include = "image_api"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"

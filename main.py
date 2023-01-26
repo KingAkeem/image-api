@@ -2,7 +2,6 @@ import io
 import os
 import pytesseract
 import numpy as np
-import sqlite3
 
 from flask import Flask, request, g
 from flask_cors import CORS
@@ -25,11 +24,11 @@ if not os.path.exists(FILE_DIR):
 """
 Reads and parses an image file, returning the relevant data based on the type 
 """
-@app.route("/", methods=["POST"])
+@app.route("/scan", methods=["POST"])
 def scan():
 	app.logger.debug(f'SCANNING REQUEST... {request}')
-	# scan type determines what kind of image we are interested
-	scan_type = request.args.get('scan_type', default=None, type=str)
+	# the type determines what kind of image we are interested
+	scan_type = request.args.get('type', default=None, type=str)
 	# the user that initiates the scan
 	user = request.args.get('user', default=None, type=str)
 

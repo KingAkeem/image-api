@@ -10,18 +10,20 @@ Initialize database and setup tables
 """
 def init(app):
 	with app.app_context():
-		setup_tables()
+		setup_tables() # nothing happens if they exist
 
 """
 Get database connection
 """
-def get_connection(database = "database/scans"):
+def get_connection(db_directory = "database", db_name = "scans"):
 	conn = getattr(g, '_database', None)
 	if conn is None:
-		if not os.path.exists("database"):
-			os.makedirs("database")
+		# attempt to create db_directory for the database file if it doesn't exist
+		if not os.path.exists(db_directory):
+			os.makedirs(db_directory)
 
-		conn = g._database = sqlite3.connect(database)
+		db_url = os.path.join(db_directory, db_name) # construct complete path to DB file
+		conn = g._database = sqlite3.connect(db_url) # store connection for later use
 	
 	return conn
 
