@@ -9,7 +9,7 @@ from quantulum3 import parser
 from PIL import Image
 from http import HTTPStatus
 from datetime import datetime, timezone
-from db import insert_request, insert_scan, init
+from db import insert_status, insert_scan, init
 
 
 app = Flask(__name__)
@@ -29,16 +29,18 @@ def scan():
 	app.logger.debug(f'SCANNING REQUEST... {request}')
 	# the type determines what kind of image we are interested
 	scan_type = request.args.get('type', default=None, type=str)
+	if not scan_type:
+		scan_type = "generic"
 	# the user that initiates the scan
 	user = request.args.get('user', default=None, type=str)
 
-	insert_request({"created_user": user, "status": "PROCESSING"})
+	insert_status({"created_user": user, "message": "Starting", "status": "PROCESSING"})
 
 	# request.data represents the image data in bytes
 	if not request.data or not user: 
-		msg = "User and request data must be specified"
+		msg = f"user and request data must be specified, user: {user} and request data: {request.data}"
 		app.logger.error(msg)
-		insert_request({"created_user": user, "status": "ERROR"})
+		insert_status({"created_user": user, "status": "ERROR", "message": msg})
 		return {"error": msg}, HTTPStatus.BAD_REQUEST
 
 	# convert image to text format
@@ -57,20 +59,21 @@ def scan():
 	with open(f'{directory_name}/data.txt', 'w+') as f:
 		f.write(text)
 
-	data = text # data is initially text, unless scanned
-	if scan_type:
+	# generic scans return plain text data
+	data = text 
+	if scan_type != 'generic':
 		try:
 			scanner = Scanner(scan_type)
 			data = scanner.scan(text)
 		except ValueError as e:
 			app.logger.error(e)
-			insert_request({"created_user": user, "status": "ERROR"})
+			insert_status({"created_user": user, "message": e.message, "status": "ERROR"})
 			return {"error": e.message}, HTTPStatus.BAD_REQUEST
 
 	insert_scan({"type": scan_type, "created_date": current_time, "created_user": user, "text": text})
 
 	app.logger.debug("PARSED DATA\n\n%s", data)
-	insert_request({"created_user": user, "status": "DONE"})
+	insert_status({"created_user": user, "message": "Successful", "status": "DONE"})
 
 	return data, HTTPStatus.OK
 
@@ -90,7 +93,6 @@ class Scanner(ScannerInterface):
 		
 	def scan(self, text):
 		return self._scanner.scan(text)
-
 
 class NutritionScanner(ScannerInterface):
 	def __init__(self):
