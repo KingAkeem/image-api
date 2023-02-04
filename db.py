@@ -1,5 +1,6 @@
 import os
 import sqlite3
+import uuid
 
 from flask import g
 from datetime import datetime, timezone
@@ -32,10 +33,11 @@ def setup_tables():
 	conn = get_connection()
 	cur = conn.cursor()
 	cur.execute("""
-		CREATE TABLE IF NOT EXISTS request_tracker(
+		CREATE TABLE IF NOT EXISTS status_tracker(
 			id,
 			created_date,
 			created_user,
+			message,
 			status
 		)
 	""")
@@ -54,30 +56,29 @@ def setup_tables():
 def timestamp():
 	return datetime.now(timezone.utc).isoformat()
 
-def insert_request(request):
+def id():
+	return str(uuid.uuid4())
+
+def insert_status(status):
 	conn = get_connection()
 	cur = conn.cursor()
-	# auto-generate ID
-	# use current time for created date
-	# user and status are only required fields
-	cur.execute(f'''INSERT INTO request_tracker (
+	cur.execute(f'''INSERT INTO status_tracker (
 		id, 
 		created_date,
 		created_user,
+		message,
 		status
-	) VALUES (?, ?, ?,?);''', ("abc", timestamp(), request["created_user"], request["status"]))
+	) VALUES (?,?,?,?,?);''', (id(), timestamp(), status["created_user"], status["message"], status["status"]))
 	conn.commit()
 
 def insert_scan(scan):
 	conn = get_connection()
 	cur = conn.cursor()
-	# auto-generate ID
-	# all other fields required
 	cur.execute(f"""INSERT INTO scan (
 		id, 
 		type,
 		created_date,
 		created_user,
 		text
-	) VALUES (?, ?, ?, ?, ?)""", ("something", scan["type"], scan["created_date"], scan["created_user"], scan["text"]))
+	) VALUES (?, ?, ?, ?, ?)""", (id(), scan["type"], scan["created_date"], scan["created_user"], scan["text"]))
 	conn.commit()
